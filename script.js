@@ -74,6 +74,8 @@ function showMapScreen() {
     document.getElementById("userName").textContent = currentUser.name
   }
   resetMapInterface()
+  // Dibujar el grafo estático cuando se muestra el mapa
+  drawStaticGraph()
 }
 
 function hideAllScreens() {
@@ -226,9 +228,16 @@ function hideResults() {
 
 function clearRouteVisualization() {
   const svg = document.getElementById("routeSvg")
-  // Limpiar todas las líneas de ruta existentes
-  const existingLines = svg.querySelectorAll(".route-line, .route-line-static")
-  existingLines.forEach((line) => line.remove())
+  // Limpiar solo las líneas de ruta, mantener las estáticas
+  const routeLines = svg.querySelectorAll(".route-line, .route-line-static")
+  routeLines.forEach((line) => line.remove())
+
+  // Resetear etiquetas de peso
+  const weightLabels = document.querySelectorAll(".weight-label")
+  weightLabels.forEach((label) => {
+    label.classList.remove("route-active")
+  })
+
   currentRoute = null
 }
 
@@ -246,6 +255,75 @@ function resetMapInterface() {
   updateCalculateButton()
   hideResults()
   clearRouteVisualization()
+}
+
+// ==================== DIBUJO DEL GRAFO ESTÁTICO ====================
+
+function drawStaticGraph() {
+  const svg = document.getElementById("routeSvg")
+  const mapContainer = document.querySelector(".map")
+
+  // Limpiar contenido previo
+  svg.innerHTML = `
+    <defs>
+      <marker id="arrowhead" markerWidth="12" markerHeight="8" refX="11" refY="4" orient="auto" markerUnits="strokeWidth">
+        <polygon points="0 0, 12 4, 0 8" fill="#ff6b35" stroke="#ff6b35" stroke-width="1"/>
+      </marker>
+      <filter id="glow">
+        <feGaussianBlur stdDeviation="3" result="coloredBlur"/>
+        <feMerge> 
+          <feMergeNode in="coloredBlur"/>
+          <feMergeNode in="SourceGraphic"/>
+        </feMerge>
+      </filter>
+    </defs>
+  `
+
+  // Limpiar etiquetas de peso previas
+  const existingLabels = mapContainer.querySelectorAll(".weight-label")
+  existingLabels.forEach((label) => label.remove())
+
+  // Dibujar todas las aristas del grafo
+  graph.edges.forEach(([from, to, weight]) => {
+    drawStaticEdge(svg, from, to, weight)
+    createWeightLabel(mapContainer, from, to, weight)
+  })
+}
+
+function drawStaticEdge(svg, from, to, weight) {
+  const fromPos = nodePositions[from]
+  const toPos = nodePositions[to]
+
+  // Crear línea estática
+  const line = document.createElementNS("http://www.w3.org/2000/svg", "line")
+  line.setAttribute("x1", `${fromPos.x}%`)
+  line.setAttribute("y1", `${fromPos.y}%`)
+  line.setAttribute("x2", `${toPos.x}%`)
+  line.setAttribute("y2", `${toPos.y}%`)
+  line.setAttribute("class", "static-edge")
+  line.setAttribute("data-edge", `${from}-${to}`)
+
+  svg.appendChild(line)
+}
+
+function createWeightLabel(container, from, to, weight) {
+  const fromPos = nodePositions[from]
+  const toPos = nodePositions[to]
+
+  // Calcular posición del punto medio
+  const midX = (fromPos.x + toPos.x) / 2
+  const midY = (fromPos.y + toPos.y) / 2
+
+  // Crear etiqueta de peso
+  const label = document.createElement("div")
+  label.className = "weight-label"
+  label.textContent = `${weight}s`
+  label.style.left = `${midX}%`
+  label.style.top = `${midY}%`
+  label.setAttribute("data-edge", `${from}-${to}`)
+  label.setAttribute("title", `Tiempo: ${weight} segundos | Costo: $${(weight * TARIFF).toFixed(2)}`)
+
+  container.appendChild(label)
 }
 
 // ==================== ALGORITMO DE DIJKSTRA ====================
@@ -329,8 +407,9 @@ function reconstructPath(source, destination, predecessors) {
 function drawRouteArrows(path) {
   const svg = document.getElementById("routeSvg")
 
-  // Limpiar rutas anteriores
-  clearRouteVisualization()
+  // Limpiar rutas anteriores (mantener estáticas)
+  const routeLines = svg.querySelectorAll(".route-line, .route-line-static")
+  routeLines.forEach((line) => line.remove())
 
   // Dibujar líneas con flechas para cada segmento de la ruta
   for (let i = 0; i < path.length - 1; i++) {
@@ -339,18 +418,14 @@ function drawRouteArrows(path) {
 
     drawArrowBetweenNodes(svg, fromNode, toNode, i)
   }
+
+  // Resaltar etiquetas de peso de la ruta
+  highlightRouteWeights(path)
 }
 
 function drawArrowBetweenNodes(svg, fromNode, toNode, segmentIndex) {
   const fromPos = nodePositions[fromNode]
   const toPos = nodePositions[toNode]
-
-  // Convertir porcentajes a coordenadas del SVG
-  const svgRect = svg.getBoundingClientRect()
-  const fromX = (fromPos.x / 100) * svgRect.width
-  const fromY = (fromPos.y / 100) * svgRect.height
-  const toX = (toPos.x / 100) * svgRect.width
-  const toY = (toPos.y / 100) * svgRect.height
 
   // Crear línea con flecha
   const line = document.createElementNS("http://www.w3.org/2000/svg", "line")
@@ -366,6 +441,27 @@ function drawArrowBetweenNodes(svg, fromNode, toNode, segmentIndex) {
   line.style.animationDelay = `${segmentIndex * 0.3}s`
 
   svg.appendChild(line)
+}
+
+function highlightRouteWeights(path) {
+  // Resetear todas las etiquetas
+  const allLabels = document.querySelectorAll(".weight-label")
+  allLabels.forEach((label) => {
+    label.classList.remove("route-active")
+  })
+
+  // Resaltar etiquetas de la ruta
+  for (let i = 0; i < path.length - 1; i++) {
+    const from = path[i]
+    const to = path[i + 1]
+
+    // Buscar la etiqueta correspondiente (puede estar en cualquier orden)
+    const label1 = document.querySelector(`[data-edge="${from}-${to}"]`)
+    const label2 = document.querySelector(`[data-edge="${to}-${from}"]`)
+
+    if (label1) label1.classList.add("route-active")
+    if (label2) label2.classList.add("route-active")
+  }
 }
 
 function highlightCurrentSegment(path, progress) {
@@ -512,6 +608,7 @@ function finishAnimation() {
   // Resetear la interfaz después de completar el viaje
   setTimeout(() => {
     resetMapInterface()
+    drawStaticGraph() // Redibujar el grafo estático
   }, 1000)
 }
 

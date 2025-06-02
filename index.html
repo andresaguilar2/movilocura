@@ -73,8 +73,26 @@
             
             <div class="map-container">
                 <div class="map-section">
-                    <h3>Mapa de MoviSimple</h3>
+                    <h3>🗺️ Mapa de MoviSimple</h3>
+                    <p>6 nodos conectados - Selecciona origen y destino</p>
                     <div class="map">
+                        <!-- SVG para las flechas de ruta -->
+                        <svg class="route-svg" id="routeSvg">
+                            <defs>
+                                <marker id="arrowhead" markerWidth="12" markerHeight="8" refX="11" refY="4" orient="auto" markerUnits="strokeWidth">
+                                    <polygon points="0 0, 12 4, 0 8" fill="#ff6b35" stroke="#ff6b35" stroke-width="1"/>
+                                </marker>
+                                <filter id="glow">
+                                    <feGaussianBlur stdDeviation="3" result="coloredBlur"/>
+                                    <feMerge> 
+                                        <feMergeNode in="coloredBlur"/>
+                                        <feMergeNode in="SourceGraphic"/>
+                                    </feMerge>
+                                </filter>
+                            </defs>
+                        </svg>
+                        
+                        <!-- Nodos del mapa -->
                         <div class="node" id="node1" style="top: 10%; left: 50%;">1</div>
                         <div class="node" id="node2" style="top: 35%; left: 15%;">2</div>
                         <div class="node" id="node3" style="top: 35%; left: 85%;">3</div>
@@ -85,7 +103,7 @@
                 </div>
                 
                 <div class="controls-section">
-                    <h3>Control de Viaje</h3>
+                    <h3>🚗 Control de Viaje</h3>
                     <div class="form-group">
                         <label>Origen:</label>
                         <select id="originSelect">
@@ -106,11 +124,11 @@
                         </select>
                     </div>
                     
-                    <button id="calculateBtn" onclick="calculateRoute()" disabled>Calcular Ruta</button>
+                    <button id="calculateBtn" onclick="calculateRoute()" disabled>🧮 Calcular Ruta</button>
                     
                     <div id="progressContainer" class="progress-container">
                         <div class="progress-info">
-                            <span>Progreso del viaje</span>
+                            <span>🚀 Progreso del viaje</span>
                             <span id="progressPercent">0%</span>
                         </div>
                         <div class="progress-bar">
@@ -119,10 +137,10 @@
                     </div>
                     
                     <div id="tripInfo" class="trip-info">
-                        <h4>Información del Viaje</h4>
-                        <p><strong>Tiempo Total:</strong> <span id="totalTime">0</span> segundos</p>
-                        <p><strong>Costo:</strong> $<span id="totalCost">0.00</span></p>
-                        <p><strong>Ruta:</strong></p>
+                        <h4>📊 Información del Viaje</h4>
+                        <p><strong>⏱️ Tiempo Total:</strong> <span id="totalTime">0</span> segundos</p>
+                        <p><strong>💰 Costo:</strong> $<span id="totalCost">0.00</span></p>
+                        <p><strong>🛣️ Ruta:</strong></p>
                         <div id="routePath" class="route-badges"></div>
                     </div>
                 </div>

@@ -3,9 +3,20 @@ let currentUser = null
 let currentOrigin = null
 let currentDestination = null
 let isAnimating = false
+let currentRoute = null
 
 // Configuración
 const TARIFF = 0.5 // $0.50 por segundo
+
+// Posiciones exactas de los nodos (en porcentajes)
+const nodePositions = {
+  1: { x: 50, y: 10 },
+  2: { x: 15, y: 35 },
+  3: { x: 85, y: 35 },
+  4: { x: 15, y: 65 },
+  5: { x: 85, y: 65 },
+  6: { x: 50, y: 90 },
+}
 
 // Definición del grafo con 9 aristas bidireccionales
 const graph = {
@@ -159,6 +170,7 @@ function handleOriginChange(e) {
   updateNodeColors()
   updateCalculateButton()
   hideResults()
+  clearRouteVisualization()
 }
 
 function handleDestinationChange(e) {
@@ -166,6 +178,7 @@ function handleDestinationChange(e) {
   updateNodeColors()
   updateCalculateButton()
   hideResults()
+  clearRouteVisualization()
 }
 
 function updateDestinationOptions() {
@@ -211,10 +224,19 @@ function hideResults() {
   document.getElementById("tripInfo").style.display = "none"
 }
 
+function clearRouteVisualization() {
+  const svg = document.getElementById("routeSvg")
+  // Limpiar todas las líneas de ruta existentes
+  const existingLines = svg.querySelectorAll(".route-line, .route-line-static")
+  existingLines.forEach((line) => line.remove())
+  currentRoute = null
+}
+
 function resetMapInterface() {
   currentOrigin = null
   currentDestination = null
   isAnimating = false
+  currentRoute = null
 
   document.getElementById("originSelect").value = ""
   document.getElementById("destinationSelect").value = ""
@@ -223,6 +245,7 @@ function resetMapInterface() {
   updateNodeColors()
   updateCalculateButton()
   hideResults()
+  clearRouteVisualization()
 }
 
 // ==================== ALGORITMO DE DIJKSTRA ====================
@@ -301,6 +324,69 @@ function reconstructPath(source, destination, predecessors) {
   return path
 }
 
+// ==================== VISUALIZACIÓN DE RUTAS CON FLECHAS ====================
+
+function drawRouteArrows(path) {
+  const svg = document.getElementById("routeSvg")
+
+  // Limpiar rutas anteriores
+  clearRouteVisualization()
+
+  // Dibujar líneas con flechas para cada segmento de la ruta
+  for (let i = 0; i < path.length - 1; i++) {
+    const fromNode = path[i]
+    const toNode = path[i + 1]
+
+    drawArrowBetweenNodes(svg, fromNode, toNode, i)
+  }
+}
+
+function drawArrowBetweenNodes(svg, fromNode, toNode, segmentIndex) {
+  const fromPos = nodePositions[fromNode]
+  const toPos = nodePositions[toNode]
+
+  // Convertir porcentajes a coordenadas del SVG
+  const svgRect = svg.getBoundingClientRect()
+  const fromX = (fromPos.x / 100) * svgRect.width
+  const fromY = (fromPos.y / 100) * svgRect.height
+  const toX = (toPos.x / 100) * svgRect.width
+  const toY = (toPos.y / 100) * svgRect.height
+
+  // Crear línea con flecha
+  const line = document.createElementNS("http://www.w3.org/2000/svg", "line")
+  line.setAttribute("x1", `${fromPos.x}%`)
+  line.setAttribute("y1", `${fromPos.y}%`)
+  line.setAttribute("x2", `${toPos.x}%`)
+  line.setAttribute("y2", `${toPos.y}%`)
+  line.setAttribute("class", "route-line")
+  line.setAttribute("marker-end", "url(#arrowhead)")
+  line.setAttribute("data-segment", segmentIndex)
+
+  // Agregar retraso en la animación para efecto secuencial
+  line.style.animationDelay = `${segmentIndex * 0.3}s`
+
+  svg.appendChild(line)
+}
+
+function highlightCurrentSegment(path, progress) {
+  if (!path || path.length < 2) return
+
+  const svg = document.getElementById("routeSvg")
+  const lines = svg.querySelectorAll(".route-line")
+
+  // Calcular qué segmento está activo basado en el progreso
+  const totalSegments = path.length - 1
+  const currentSegmentIndex = Math.floor((progress / 100) * totalSegments)
+
+  lines.forEach((line, index) => {
+    if (index <= currentSegmentIndex) {
+      line.classList.add("route-highlight")
+    } else {
+      line.classList.remove("route-highlight")
+    }
+  })
+}
+
 // ==================== CÁLCULO Y VISUALIZACIÓN DE RUTAS ====================
 
 function calculateRoute() {
@@ -320,8 +406,14 @@ function calculateRoute() {
   const path = reconstructPath(currentOrigin, currentDestination, predecessors)
   const cost = totalTime * TARIFF
 
+  // Guardar la ruta actual
+  currentRoute = path
+
   // Mostrar información del viaje
   displayTripInfo(totalTime, cost, path)
+
+  // Dibujar flechas de la ruta
+  drawRouteArrows(path)
 
   // Colorear nodos de la ruta
   highlightRoutePath(path)
@@ -334,11 +426,11 @@ function displayTripInfo(totalTime, cost, path) {
   document.getElementById("totalTime").textContent = totalTime
   document.getElementById("totalCost").textContent = cost.toFixed(2)
 
-  // Mostrar ruta como badges
+  // Mostrar ruta como badges con flechas
   const routePathDiv = document.getElementById("routePath")
   routePathDiv.innerHTML = ""
 
-  path.forEach((node) => {
+  path.forEach((node, index) => {
     const badge = document.createElement("span")
     badge.className = "badge"
     badge.textContent = node
@@ -358,7 +450,7 @@ function highlightRoutePath(path) {
   })
 }
 
-// ==================== ANIMACIÓN ====================
+// ==================== ANIMACIÓN MEJORADA ====================
 
 function startAnimation(totalTime) {
   isAnimating = true
@@ -392,8 +484,11 @@ function startAnimation(totalTime) {
     progressFill.style.width = `${progress}%`
     progressPercent.textContent = `${Math.round(progress)}%`
 
-    // Actualizar nodo actual (opcional)
+    // Actualizar nodo actual y segmentos de ruta
     updateCurrentNodeAnimation(progress)
+    if (currentRoute) {
+      highlightCurrentSegment(currentRoute, progress)
+    }
   }, updateInterval)
 }
 
@@ -403,8 +498,12 @@ function updateCurrentNodeAnimation(progress) {
     node.classList.remove("current")
   })
 
-  // Esta función se puede expandir para mostrar el progreso en el mapa
-  // Por ahora, simplemente mantenemos la visualización básica
+  // Calcular nodo actual basado en el progreso
+  if (currentRoute && currentRoute.length > 0) {
+    const pathIndex = Math.floor((progress / 100) * (currentRoute.length - 1))
+    const currentNodeId = currentRoute[Math.min(pathIndex, currentRoute.length - 1)]
+    document.getElementById(`node${currentNodeId}`).classList.add("current")
+  }
 }
 
 function finishAnimation() {
@@ -424,6 +523,8 @@ function debugGraph() {
   console.log("Nodos: 6")
   console.log("Aristas:", graph.edges)
   console.log("Lista de adyacencia:", createAdjacencyList())
+  console.log("Posiciones de nodos:", nodePositions)
 }
 
 // Llamar a debugGraph() en la consola para ver la estructura del grafo
+

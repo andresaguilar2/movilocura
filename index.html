@@ -74,9 +74,9 @@
             <div class="map-container">
                 <div class="map-section">
                     <h3>🗺️ Mapa de MoviSimple</h3>
-                    <p>6 nodos conectados - Selecciona origen y destino</p>
+                    <p>6 nodos conectados - Tiempos en segundos</p>
                     <div class="map">
-                        <!-- SVG para las flechas de ruta -->
+                        <!-- SVG para las conexiones estáticas y rutas -->
                         <svg class="route-svg" id="routeSvg">
                             <defs>
                                 <marker id="arrowhead" markerWidth="12" markerHeight="8" refX="11" refY="4" orient="auto" markerUnits="strokeWidth">
@@ -90,6 +90,7 @@
                                     </feMerge>
                                 </filter>
                             </defs>
+                            <!-- Las conexiones estáticas se dibujarán aquí con JavaScript -->
                         </svg>
                         
                         <!-- Nodos del mapa -->
@@ -99,6 +100,8 @@
                         <div class="node" id="node4" style="top: 65%; left: 15%;">4</div>
                         <div class="node" id="node5" style="top: 65%; left: 85%;">5</div>
                         <div class="node" id="node6" style="top: 90%; left: 50%;">6</div>
+                        
+                        <!-- Etiquetas de peso se agregarán dinámicamente -->
                     </div>
                 </div>
                 

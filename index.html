@@ -1,0 +1,156 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>MoviSimple</title>
+    <link rel="stylesheet" href="styles.css">
+</head>
+<body>
+    <div class="container">
+        <header>
+            <h1>MoviSimple</h1>
+            <p>La odisea de los seis puntos</p>
+        </header>
+        
+        <!-- Login -->
+        <div id="loginScreen" class="screen active">
+            <div class="form-container">
+                <h2>Iniciar Sesión</h2>
+                <form id="loginForm">
+                    <div class="form-group">
+                        <label>Email:</label>
+                        <input type="email" id="loginEmail" required>
+                    </div>
+                    <div class="form-group">
+                        <label>Contraseña:</label>
+                        <input type="password" id="loginPassword" required>
+                    </div>
+                    <button type="submit">Iniciar Sesión</button>
+                    <div id="loginError" class="error"></div>
+                </form>
+                <div class="switch-form">
+                    ¿No tienes cuenta? <a href="#" onclick="showRegister()">Regístrate</a>
+                </div>
+            </div>
+        </div>
+        
+        <!-- Registro -->
+        <div id="registerScreen" class="screen">
+            <div class="form-container">
+                <h2>Registro</h2>
+                <form id="registerForm">
+                    <div class="form-group">
+                        <label>Nombre:</label>
+                        <input type="text" id="registerName" required>
+                    </div>
+                    <div class="form-group">
+                        <label>Email:</label>
+                        <input type="email" id="registerEmail" required>
+                    </div>
+                    <div class="form-group">
+                        <label>Contraseña:</label>
+                        <input type="password" id="registerPassword" required>
+                    </div>
+                    <button type="submit">Registrarse</button>
+                    <div id="registerError" class="error"></div>
+                </form>
+                <div class="switch-form">
+                    ¿Ya tienes cuenta? <a href="#" onclick="showLogin()">Inicia sesión</a>
+                </div>
+            </div>
+        </div>
+        
+        <!-- Mapa -->
+        <div id="mapScreen" class="screen">
+            <div class="map-header">
+                <div>
+                    <h2>Bienvenido, <span id="userName"></span></h2>
+                    <p>Selecciona tu ruta de viaje</p>
+                </div>
+                <button onclick="logout()">Cerrar Sesión</button>
+            </div>
+            
+            <div class="map-container">
+                <div class="map-section">
+                    <h3>🗺️ Mapa de MoviSimple</h3>
+                    <p>6 nodos conectados - Tiempos en segundos</p>
+                    <div class="map">
+                        <!-- SVG para las conexiones estáticas y rutas -->
+                        <svg class="route-svg" id="routeSvg">
+                            <defs>
+                                <marker id="arrowhead" markerWidth="12" markerHeight="8" refX="11" refY="4" orient="auto" markerUnits="strokeWidth">
+                                    <polygon points="0 0, 12 4, 0 8" fill="#ff6b35" stroke="#ff6b35" stroke-width="1"/>
+                                </marker>
+                                <filter id="glow">
+                                    <feGaussianBlur stdDeviation="3" result="coloredBlur"/>
+                                    <feMerge> 
+                                        <feMergeNode in="coloredBlur"/>
+                                        <feMergeNode in="SourceGraphic"/>
+                                    </feMerge>
+                                </filter>
+                            </defs>
+                            <!-- Las conexiones estáticas se dibujarán aquí con JavaScript -->
+                        </svg>
+                        
+                        <!-- Nodos del mapa -->
+                        <div class="node" id="node1" style="top: 10%; left: 50%;">1</div>
+                        <div class="node" id="node2" style="top: 35%; left: 15%;">2</div>
+                        <div class="node" id="node3" style="top: 35%; left: 85%;">3</div>
+                        <div class="node" id="node4" style="top: 65%; left: 15%;">4</div>
+                        <div class="node" id="node5" style="top: 65%; left: 85%;">5</div>
+                        <div class="node" id="node6" style="top: 90%; left: 50%;">6</div>
+                        
+                        <!-- Etiquetas de peso se agregarán dinámicamente -->
+                    </div>
+                </div>
+                
+                <div class="controls-section">
+                    <h3>🚗 Control de Viaje</h3>
+                    <div class="form-group">
+                        <label>Origen:</label>
+                        <select id="originSelect">
+                            <option value="">Seleccionar origen</option>
+                            <option value="1">Nodo 1</option>
+                            <option value="2">Nodo 2</option>
+                            <option value="3">Nodo 3</option>
+                            <option value="4">Nodo 4</option>
+                            <option value="5">Nodo 5</option>
+                            <option value="6">Nodo 6</option>
+                        </select>
+                    </div>
+                    
+                    <div class="form-group">
+                        <label>Destino:</label>
+                        <select id="destinationSelect">
+                            <option value="">Seleccionar destino</option>
+                        </select>
+                    </div>
+                    
+                    <button id="calculateBtn" onclick="calculateRoute()" disabled>🧮 Calcular Ruta</button>
+                    
+                    <div id="progressContainer" class="progress-container">
+                        <div class="progress-info">
+                            <span>🚀 Progreso del viaje</span>
+                            <span id="progressPercent">0%</span>
+                        </div>
+                        <div class="progress-bar">
+                            <div id="progressFill" class="progress-fill"></div>
+                        </div>
+                    </div>
+                    
+                    <div id="tripInfo" class="trip-info">
+                        <h4>📊 Información del Viaje</h4>
+                        <p><strong>⏱️ Tiempo Total:</strong> <span id="totalTime">0</span> segundos</p>
+                        <p><strong>💰 Costo:</strong> $<span id="totalCost">0.00</span></p>
+                        <p><strong>🛣️ Ruta:</strong></p>
+                        <div id="routePath" class="route-badges"></div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <script src="script.js"></script>
+</body>
+</html>

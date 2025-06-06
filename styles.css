@@ -1,4 +1,4 @@
-/* Reset y configuración base */
+* Reset y configuración base */
 * {
   margin: 0;
   padding: 0;
@@ -192,10 +192,101 @@ button:disabled {
 .map {
   position: relative;
   background: #f5f5f5;
-  height: 300px;
+  height: 350px;
   border-radius: 10px;
   margin-top: 15px;
   border: 2px solid #e0e0e0;
+  overflow: hidden;
+}
+
+/* SVG para las rutas */
+.route-svg {
+  position: absolute;
+  top: 0;
+  left: 0;
+  width: 100%;
+  height: 100%;
+  pointer-events: none;
+  z-index: 1;
+}
+
+/* Líneas estáticas del grafo */
+.static-edge {
+  stroke: #d1d5db;
+  stroke-width: 2;
+  fill: none;
+  stroke-linecap: round;
+  opacity: 0.6;
+}
+
+/* Líneas de ruta con flechas */
+.route-line {
+  stroke: #ff6b35;
+  stroke-width: 4;
+  fill: none;
+  stroke-dasharray: 10, 5;
+  stroke-linecap: round;
+  filter: url(#glow);
+  animation: dash 2s linear infinite;
+}
+
+.route-line-static {
+  stroke: #007bff;
+  stroke-width: 3;
+  fill: none;
+  stroke-linecap: round;
+  opacity: 0.7;
+}
+
+/* Animación de las líneas */
+@keyframes dash {
+  0% {
+    stroke-dashoffset: 0;
+  }
+  100% {
+    stroke-dashoffset: -15;
+  }
+}
+
+/* Etiquetas de peso */
+.weight-label {
+  position: absolute;
+  background: rgba(255, 255, 255, 0.95);
+  border: 2px solid #4f46e5;
+  border-radius: 12px;
+  padding: 4px 8px;
+  font-size: 11px;
+  font-weight: bold;
+  color: #4f46e5;
+  transform: translate(-50%, -50%);
+  z-index: 3;
+  box-shadow: 0 2px 6px rgba(0, 0, 0, 0.15);
+  min-width: 24px;
+  text-align: center;
+  transition: all 0.3s ease;
+}
+
+.weight-label:hover {
+  background: #4f46e5;
+  color: white;
+  transform: translate(-50%, -50%) scale(1.1);
+}
+
+.weight-label.route-active {
+  background: #ff6b35;
+  color: white;
+  border-color: #ff6b35;
+  animation: pulse-weight 2s infinite;
+}
+
+@keyframes pulse-weight {
+  0%,
+  100% {
+    transform: translate(-50%, -50%) scale(1);
+  }
+  50% {
+    transform: translate(-50%, -50%) scale(1.15);
+  }
 }
 
 /* Nodos */
@@ -215,6 +306,7 @@ button:disabled {
   box-shadow: 0 2px 8px rgba(0, 0, 0, 0.2);
   transition: all 0.3s ease;
   cursor: pointer;
+  z-index: 4;
 }
 
 .node:hover {
@@ -224,30 +316,36 @@ button:disabled {
 .node.origin {
   background: #28a745;
   animation: pulse 2s infinite;
+  box-shadow: 0 0 20px rgba(40, 167, 69, 0.6);
 }
 
 .node.destination {
   background: #dc3545;
   animation: pulse 2s infinite;
+  box-shadow: 0 0 20px rgba(220, 53, 69, 0.6);
 }
 
 .node.route {
   background: #007bff;
+  box-shadow: 0 0 15px rgba(0, 123, 255, 0.5);
 }
 
 .node.current {
   background: #fd7e14;
   animation: bounce 1s infinite;
+  box-shadow: 0 0 25px rgba(253, 126, 20, 0.8);
 }
 
-/* Animaciones */
+/* Animaciones mejoradas */
 @keyframes pulse {
   0%,
   100% {
     transform: translate(-50%, -50%) scale(1);
+    box-shadow: 0 0 20px rgba(40, 167, 69, 0.6);
   }
   50% {
     transform: translate(-50%, -50%) scale(1.1);
+    box-shadow: 0 0 30px rgba(40, 167, 69, 0.8);
   }
 }
 
@@ -268,6 +366,7 @@ button:disabled {
   padding: 15px;
   background: #f8f9fa;
   border-radius: 8px;
+  border-left: 4px solid #667eea;
 }
 
 .progress-info {
@@ -287,9 +386,10 @@ button:disabled {
 
 .progress-fill {
   height: 100%;
-  background: #667eea;
+  background: linear-gradient(90deg, #667eea, #764ba2);
   width: 0%;
   transition: width 0.3s ease;
+  border-radius: 5px;
 }
 
 /* Información del viaje */
@@ -320,12 +420,29 @@ button:disabled {
 }
 
 .badge {
-  background: #007bff;
+  background: linear-gradient(45deg, #007bff, #0056b3);
   color: white;
-  padding: 3px 8px;
-  border-radius: 10px;
+  padding: 4px 10px;
+  border-radius: 15px;
   font-size: 12px;
   font-weight: bold;
+  box-shadow: 0 2px 4px rgba(0, 123, 255, 0.3);
+  position: relative;
+}
+
+.badge::after {
+  content: "→";
+  margin-left: 5px;
+  font-weight: normal;
+}
+
+.badge:last-child::after {
+  content: "🏁";
+}
+
+.badge:first-child::before {
+  content: "🚀";
+  margin-right: 5px;
 }
 
 /* Responsive */
@@ -345,7 +462,7 @@ button:disabled {
   }
 
   .map {
-    height: 250px;
+    height: 280px;
   }
 
   .node {
@@ -353,4 +470,43 @@ button:disabled {
     height: 35px;
     font-size: 14px;
   }
+
+  .route-line {
+    stroke-width: 3;
+  }
+
+  .weight-label {
+    font-size: 10px;
+    padding: 3px 6px;
+  }
 }
+
+/* Efectos adicionales para las rutas */
+.route-highlight {
+  animation: routeGlow 3s ease-in-out infinite alternate;
+}
+
+@keyframes routeGlow {
+  0% {
+    filter: drop-shadow(0 0 5px #ff6b35);
+  }
+  100% {
+    filter: drop-shadow(0 0 15px #ff6b35);
+  }
+}
+
+/* Leyenda del mapa */
+.map-legend {
+  position: absolute;
+  top: 10px;
+  right: 10px;
+  background: rgba(255, 255, 255, 0.95);
+  padding: 8px;
+  border-radius: 6px;
+  font-size: 10px;
+  color: #666;
+  z-index: 5;
+  box-shadow: 0 2px 4px rgba(0, 0, 0, 0.1);
+}
+
+
